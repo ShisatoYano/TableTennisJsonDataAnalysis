@@ -59,9 +59,15 @@ class EngineeringFeatureAsCsv:
         self.score_1_array[index] = self.sum_score_1
         self.score_2_array[index] = self.sum_score_2
         # detect next game start
-        if self.sum_score_1 >= 11 or self.sum_score_2 >= 11:
-            self.sum_score_1 = 0
-            self.sum_score_2 = 0
+        sum_score_12 = self.sum_score_1 + self.sum_score_2
+        if sum_score_12 >= 20:
+            if abs(self.sum_score_1 - self.sum_score_2) == 2:
+                self.sum_score_1 = 0
+                self.sum_score_2 = 0
+        else:
+            if self.sum_score_1 >= 11 or self.sum_score_2 == 11:
+                self.sum_score_1 = 0
+                self.sum_score_2 = 0
     
     def add_features_to_df(self):
         self.df_data['player1Score'] = self.score_1_array
@@ -70,6 +76,7 @@ class EngineeringFeatureAsCsv:
     def create_features(self):
         self.get_point_player = self.df_data['getPointPlayer'].values
         self.rally_count      = self.df_data['rallyCnt'].values
+        # additional feature array
         self.score_1_array    = np.zeros(len(self.get_point_player))
         self.score_2_array    = np.zeros(len(self.get_point_player))
         for i, (gpp, rc) in enumerate(zip(self.get_point_player, self.rally_count)):
