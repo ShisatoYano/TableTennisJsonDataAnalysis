@@ -8,14 +8,19 @@ import json
 
 class EngineeringFeatureAsCsv:
     def __init__(self):
-        self.json_path_list   = None
-        self.json_data        = None
-        self.player_1_name    = None
-        self.player_2_name    = None
-        self.first_server_num = None
-        self.sum_score_1      = 0
-        self.sum_score_2      = 0
-        self.df_data          = None
+        self.json_path_list     = None
+        self.json_data          = None
+        self.player_1_name      = None
+        self.player_2_name      = None
+        self.server_num         = None
+        self.first_server_num   = None
+        self.receiver_num       = None
+        self.first_receiver_num = None
+        self.sum_score_1        = 0
+        self.sum_score_2        = 0
+        self.sum_game_count_1   = 0
+        self.sum_game_count_2   = 0
+        self.df_data            = None
     
     def load_json_data(self):
         fType = [('JSON', '*.json')]
@@ -27,6 +32,8 @@ class EngineeringFeatureAsCsv:
             for path in self.json_path_list:
                 with open(path, 'r') as f:
                     self.json_data = json.load(f)
+                    self.get_first_server_num()
+                    self.get_player_name()
                     self.convert_json_to_df(path)
                     self.create_features()
                     self.save_as_csv(path)
@@ -38,7 +45,14 @@ class EngineeringFeatureAsCsv:
     
     def get_first_server_num(self):
         if self.json_data:
-            self.first_server_num = self.json_data['firstGameServer']
+            self.server_num = self.json_data['firstGameServer']
+            self.first_server_num = self.server_num
+            if self.server_num == 1:
+                self.receiver_num = 2
+                self.first_receiver_num = self.receiver_num
+            else:
+                self.receiver_num = 1
+                self.first_receiver_num = self.receiver_num
     
     def convert_json_to_df(self, path):
         df_org = pd.read_json(path)
@@ -51,6 +65,36 @@ class EngineeringFeatureAsCsv:
         save_name = data_name + '.csv'
         self.df_data.to_csv(save_name, index=False, encoding='shift-jis')
     
+    def set_server_receiver(self, index):
+        self.server_array[index]   = self.server_num
+        self.receiver_array[index] = self.receiver_num
+        if (self.sum_score_1 + self.sum_score_2) % 2 == 0:
+            if self.server_num == 1:
+                self.server_num   = 2
+                self.receiver_num = 1
+            else:
+                self.server_num   = 1
+                self.receiver_num = 2
+        if self.sum_score_1 == 0 and self.sum_score_2 == 0:
+            if self.first_server_num == 1:
+                self.server_num = 2
+                self.first_server_num = self.server_num
+                self.receiver_num = 1
+                self.first_receiver_num = self.receiver_num
+            else:
+                self.server_num = 1
+                self.first_server_num = self.server_num
+                self.receiver_num = 2
+                self.first_receiver_num = self.receiver_num
+    
+    def count_game(self, index):
+        if self.sum_score_1 > self.sum_score_2:
+            self.sum_game_count_1 += 1
+        else:
+            self.sum_game_count_2 += 1
+        self.game_count_1_array[index] = self.sum_game_count_1
+        self.game_count_2_array[index] = self.sum_game_count_2
+    
     def count_score(self, index, gpp):
         if gpp == 1:
             self.sum_score_1 += 1
@@ -58,29 +102,42 @@ class EngineeringFeatureAsCsv:
             self.sum_score_2 += 1
         self.score_1_array[index] = self.sum_score_1
         self.score_2_array[index] = self.sum_score_2
+        self.game_count_1_array[index] = self.sum_game_count_1
+        self.game_count_2_array[index] = self.sum_game_count_2
         # detect next game start
         sum_score_12 = self.sum_score_1 + self.sum_score_2
         if sum_score_12 >= 20:
             if abs(self.sum_score_1 - self.sum_score_2) == 2:
+                self.count_game(index)
                 self.sum_score_1 = 0
                 self.sum_score_2 = 0
         else:
-            if self.sum_score_1 >= 11 or self.sum_score_2 == 11:
+            if self.sum_score_1 >= 11 or self.sum_score_2 >= 11:
+                self.count_game(index)
                 self.sum_score_1 = 0
                 self.sum_score_2 = 0
     
     def add_features_to_df(self):
         self.df_data['player1Score'] = self.score_1_array
         self.df_data['player2Score'] = self.score_2_array
+        self.df_data['player1Game']  = self.game_count_1_array
+        self.df_data['player2Game']  = self.game_count_2_array
+        self.df_data['Server']       = self.server_array
+        self.df_data['Receiver']     = self.receiver_array
     
     def create_features(self):
         self.get_point_player = self.df_data['getPointPlayer'].values
         self.rally_count      = self.df_data['rallyCnt'].values
         # additional feature array
-        self.score_1_array    = np.zeros(len(self.get_point_player))
-        self.score_2_array    = np.zeros(len(self.get_point_player))
+        self.score_1_array      = np.zeros(len(self.get_point_player))
+        self.score_2_array      = np.zeros(len(self.get_point_player))
+        self.game_count_1_array = np.zeros(len(self.get_point_player))
+        self.game_count_2_array = np.zeros(len(self.get_point_player))
+        self.server_array       = np.zeros(len(self.get_point_player))
+        self.receiver_array     = np.zeros(len(self.get_point_player))
         for i, (gpp, rc) in enumerate(zip(self.get_point_player, self.rally_count)):
             self.count_score(i, gpp)
+            self.set_server_receiver(i)
         self.add_features_to_df()
 
 if __name__ == "__main__":
@@ -90,5 +147,3 @@ if __name__ == "__main__":
     root.withdraw()
 
     engi.load_json_data()
-    engi.get_player_name()
-    engi.get_first_server_num()
