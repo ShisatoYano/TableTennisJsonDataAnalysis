@@ -95,11 +95,36 @@ class EngineeringFeatureAsCsv:
         self.game_count_1_array[index] = self.sum_game_count_1
         self.game_count_2_array[index] = self.sum_game_count_2
     
-    def count_score(self, index, gpp):
+    def set_serve_error(self, index, gpp, rc):
+        if rc == 0:
+            if gpp == 1:
+                self.serve_error_2_array[index] = True
+            else:
+                self.serve_error_1_array[index] = True
+    
+    def set_serve_point_receive_error(self, index, gpp, rc):
+        if rc == 1:
+            if gpp == 1:
+                self.serve_point_1_array[index]   = True
+                self.receive_error_2_array[index] = True
+            else:
+                self.serve_point_2_array[index]   = True
+                self.receive_error_1_array[index] = True
+    def set_receive_point(self, index, gpp, rc):
+        if rc == 2:
+            if gpp == 1:
+                self.receive_point_1_array[index]   = True
+            else:
+                self.receive_point_2_array[index]   = True
+    
+    def count_score(self, index, gpp, rc):
         if gpp == 1:
             self.sum_score_1 += 1
         else:
             self.sum_score_2 += 1
+        self.set_serve_error(index, gpp, rc)
+        self.set_serve_point_receive_error(index, gpp, rc)
+        self.set_receive_point(index, gpp, rc)
         self.score_1_array[index] = self.sum_score_1
         self.score_2_array[index] = self.sum_score_2
         self.game_count_1_array[index] = self.sum_game_count_1
@@ -124,19 +149,47 @@ class EngineeringFeatureAsCsv:
         self.df_data['player2Game']  = self.game_count_2_array
         self.df_data['Server']       = self.server_array
         self.df_data['Receiver']     = self.receiver_array
+        self.df_data['serveError1']  = self.serve_error_1_array
+        self.df_data['serveError2']  = self.serve_error_2_array
+        self.df_data['receiveError1']  = self.receive_error_1_array
+        self.df_data['receiveError2']  = self.receive_error_2_array
+        self.df_data['servePoint1']  = self.serve_point_1_array
+        self.df_data['servePoint2']  = self.serve_point_2_array
+        self.df_data['receivePoint1']  = self.receive_point_1_array
+        self.df_data['receivePoint2']  = self.receive_point_2_array
     
     def create_features(self):
         self.get_point_player = self.df_data['getPointPlayer'].values
         self.rally_count      = self.df_data['rallyCnt'].values
         # additional feature array
-        self.score_1_array      = np.zeros(len(self.get_point_player))
-        self.score_2_array      = np.zeros(len(self.get_point_player))
-        self.game_count_1_array = np.zeros(len(self.get_point_player))
-        self.game_count_2_array = np.zeros(len(self.get_point_player))
-        self.server_array       = np.zeros(len(self.get_point_player))
-        self.receiver_array     = np.zeros(len(self.get_point_player))
+        self.score_1_array         = np.zeros(len(self.get_point_player))
+        self.score_2_array         = np.zeros(len(self.get_point_player))
+        self.game_count_1_array    = np.zeros(len(self.get_point_player))
+        self.game_count_2_array    = np.zeros(len(self.get_point_player))
+        self.server_array          = np.zeros(len(self.get_point_player))
+        self.receiver_array        = np.zeros(len(self.get_point_player))
+        self.serve_error_1_array   = np.zeros(len(self.get_point_player))
+        self.serve_error_2_array   = np.zeros(len(self.get_point_player))
+        self.receive_error_1_array = np.zeros(len(self.get_point_player))
+        self.receive_error_2_array = np.zeros(len(self.get_point_player))
+        self.serve_point_1_array   = np.zeros(len(self.get_point_player))
+        self.serve_point_2_array   = np.zeros(len(self.get_point_player))
+        self.receive_point_1_array = np.zeros(len(self.get_point_player))
+        self.receive_point_2_array = np.zeros(len(self.get_point_player))
+        self.third_point_1_array   = np.zeros(len(self.get_point_player))
+        self.third_point_2_array   = np.zeros(len(self.get_point_player))
+        self.fourth_point_1_array  = np.zeros(len(self.get_point_player))
+        self.fourth_point_2_array  = np.zeros(len(self.get_point_player))
+        self.fifth_point_1_array   = np.zeros(len(self.get_point_player))
+        self.fifth_point_2_array   = np.zeros(len(self.get_point_player))
+        self.sixth_point_1_array   = np.zeros(len(self.get_point_player))
+        self.sixth_point_2_array   = np.zeros(len(self.get_point_player))
+        self.long_point_1_array    = np.zeros(len(self.get_point_player))
+        self.long_point_2_array    = np.zeros(len(self.get_point_player))
+        self.seq_3_point_1_array   = np.zeros(len(self.get_point_player))
+        self.seq_3_point_2_array   = np.zeros(len(self.get_point_player))
         for i, (gpp, rc) in enumerate(zip(self.get_point_player, self.rally_count)):
-            self.count_score(i, gpp)
+            self.count_score(i, gpp, rc)
             self.set_server_receiver(i)
         self.add_features_to_df()
 
