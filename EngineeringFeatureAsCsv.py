@@ -110,12 +110,48 @@ class EngineeringFeatureAsCsv:
             else:
                 self.serve_point_2_array[index]   = True
                 self.receive_error_1_array[index] = True
+    
     def set_receive_point(self, index, gpp, rc):
         if rc == 2:
             if gpp == 1:
                 self.receive_point_1_array[index]   = True
             else:
                 self.receive_point_2_array[index]   = True
+    
+    def set_third_point(self, index, gpp, rc):
+        if rc == 3:
+            if gpp == 1:
+                self.third_point_1_array[index]   = True
+            else:
+                self.third_point_2_array[index]   = True
+    
+    def set_fourth_point(self, index, gpp, rc):
+        if rc == 4:
+            if gpp == 1:
+                self.fourth_point_1_array[index]   = True
+            else:
+                self.fourth_point_2_array[index]   = True
+    
+    def set_fifth_point(self, index, gpp, rc):
+        if rc == 5:
+            if gpp == 1:
+                self.fifth_point_1_array[index]   = True
+            else:
+                self.fifth_point_2_array[index]   = True
+    
+    def set_sixth_point(self, index, gpp, rc):
+        if rc == 6:
+            if gpp == 1:
+                self.sixth_point_1_array[index]   = True
+            else:
+                self.sixth_point_2_array[index]   = True
+    
+    def set_long_rally_point(self, index, gpp, rc):
+        if rc >= 7:
+            if gpp == 1:
+                self.long_point_1_array[index]   = True
+            else:
+                self.long_point_2_array[index]   = True
     
     def count_score(self, index, gpp, rc):
         if gpp == 1:
@@ -125,6 +161,11 @@ class EngineeringFeatureAsCsv:
         self.set_serve_error(index, gpp, rc)
         self.set_serve_point_receive_error(index, gpp, rc)
         self.set_receive_point(index, gpp, rc)
+        self.set_third_point(index, gpp, rc)
+        self.set_fourth_point(index, gpp, rc)
+        self.set_fifth_point(index, gpp, rc)
+        self.set_sixth_point(index, gpp, rc)
+        self.set_long_rally_point(index, gpp, rc)
         self.score_1_array[index] = self.sum_score_1
         self.score_2_array[index] = self.sum_score_2
         self.game_count_1_array[index] = self.sum_game_count_1
@@ -157,6 +198,16 @@ class EngineeringFeatureAsCsv:
         self.df_data['servePoint2']  = self.serve_point_2_array
         self.df_data['receivePoint1']  = self.receive_point_1_array
         self.df_data['receivePoint2']  = self.receive_point_2_array
+        self.df_data['thirdPoint1'] = self.third_point_1_array
+        self.df_data['thirdPoint2'] = self.third_point_2_array
+        self.df_data['fourthPoint1'] = self.fourth_point_1_array
+        self.df_data['fourthPoint2'] = self.fourth_point_2_array
+        self.df_data['fifthPoint1'] = self.fifth_point_1_array
+        self.df_data['fifthPoint2'] = self.fifth_point_2_array
+        self.df_data['sixthPoint1'] = self.sixth_point_1_array
+        self.df_data['sixthPoint2'] = self.sixth_point_2_array
+        self.df_data['longPoint1'] = self.long_point_1_array
+        self.df_data['longPoint2'] = self.long_point_2_array
     
     def create_features(self):
         self.get_point_player = self.df_data['getPointPlayer'].values
@@ -186,8 +237,8 @@ class EngineeringFeatureAsCsv:
         self.sixth_point_2_array   = np.zeros(len(self.get_point_player))
         self.long_point_1_array    = np.zeros(len(self.get_point_player))
         self.long_point_2_array    = np.zeros(len(self.get_point_player))
-        self.seq_3_point_1_array   = np.zeros(len(self.get_point_player))
-        self.seq_3_point_2_array   = np.zeros(len(self.get_point_player))
+        self.consec_point_1_array  = np.zeros(len(self.get_point_player))
+        self.consec_point_2_array  = np.zeros(len(self.get_point_player))
         for i, (gpp, rc) in enumerate(zip(self.get_point_player, self.rally_count)):
             self.count_score(i, gpp, rc)
             self.set_server_receiver(i)
