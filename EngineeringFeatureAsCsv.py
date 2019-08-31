@@ -20,6 +20,8 @@ class EngineeringFeatureAsCsv:
         self.sum_score_2        = 0
         self.sum_game_count_1   = 0
         self.sum_game_count_2   = 0
+        self.consec_count_1     = 0
+        self.consec_count_2     = 0
         self.df_data            = None
     
     def load_json_data(self):
@@ -156,8 +158,13 @@ class EngineeringFeatureAsCsv:
     def count_score(self, index, gpp, rc):
         if gpp == 1:
             self.sum_score_1 += 1
+            self.consec_count_1 += 1
+            self.consec_count_2 = 0
         else:
             self.sum_score_2 += 1
+            self.consec_count_2 += 1
+            self.consec_count_1 = 0
+        self.prev_point_player = gpp
         self.set_serve_error(index, gpp, rc)
         self.set_serve_point_receive_error(index, gpp, rc)
         self.set_receive_point(index, gpp, rc)
@@ -170,6 +177,8 @@ class EngineeringFeatureAsCsv:
         self.score_2_array[index] = self.sum_score_2
         self.game_count_1_array[index] = self.sum_game_count_1
         self.game_count_2_array[index] = self.sum_game_count_2
+        self.consec_point_1_array[index] = self.consec_count_1
+        self.consec_point_2_array[index] = self.consec_count_2
         # detect next game start
         sum_score_12 = self.sum_score_1 + self.sum_score_2
         if sum_score_12 >= 20:
@@ -184,6 +193,7 @@ class EngineeringFeatureAsCsv:
                 self.sum_score_2 = 0
     
     def add_features_to_df(self):
+        self.df_data['pointNum']  = self.point_num_array
         self.df_data['player1Score'] = self.score_1_array
         self.df_data['player2Score'] = self.score_2_array
         self.df_data['player1Game']  = self.game_count_1_array
@@ -208,11 +218,14 @@ class EngineeringFeatureAsCsv:
         self.df_data['sixthPoint2'] = self.sixth_point_2_array
         self.df_data['longPoint1'] = self.long_point_1_array
         self.df_data['longPoint2'] = self.long_point_2_array
+        self.df_data['concecPoint1'] = self.consec_point_1_array
+        self.df_data['concecPoint2'] = self.consec_point_2_array
     
     def create_features(self):
-        self.get_point_player = self.df_data['getPointPlayer'].values
-        self.rally_count      = self.df_data['rallyCnt'].values
+        self.get_point_player  = self.df_data['getPointPlayer'].values
+        self.rally_count       = self.df_data['rallyCnt'].values
         # additional feature array
+        self.point_num_array       = range(1, len(self.get_point_player)+1)
         self.score_1_array         = np.zeros(len(self.get_point_player))
         self.score_2_array         = np.zeros(len(self.get_point_player))
         self.game_count_1_array    = np.zeros(len(self.get_point_player))
