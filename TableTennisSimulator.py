@@ -42,8 +42,67 @@ class TableTennisSimulator:
             self.set_game_match_num()
             self.set_calc_interval_point()
     
+    def sigmoid_func(self, x):
+        y = 1.0 / (1.0 + np.exp(-x))
+        return y
+    
+    def calc_score_rate(self, sc_sum_1, sc_sum_2):
+        x = sc_sum_1 / (sc_sum_1 + sc_sum_2)
+        y = self.sigmoid_func(x-0.5)
+        return x
+    
+    def random_single_game(self, sc1, sc2, g1, g2, sc_rt, gm):
+        score_1 = sc1
+        score_2 = sc2
+        game_1  = g1
+        game_2  = g2
+        # count score and game
+        for i in range(1000):
+            random = np.random.rand()
+            score_1 += 1 if random > sc_rt else score_1
+            score_2 += 1 if random > sc_rt else score_2
+            if (score_1 + score_2) >= 20:
+                if abs(score_1 - score_2) == 2:
+                    game_1 += 1 if score_1 > score_2 else game_1
+                    game_2 += 1 if score_2 > score_1 else game_2
+                    score_1 = 0
+                    score_2 = 0
+            else:
+                if score_1 >= 11 or score_2 >= 11:
+                    game_1 += 1 if score_1 > score_2 else game_1
+                    game_2 += 1 if score_2 > score_1 else game_2
+                    score_1 = 0
+                    score_2 = 0
+            if game_1 >= gm:
+                return 1
+            if game_2 >= gm:
+                return 0
+        return
+    
+    def random_roop(self, sc1, sc2, g1, g2, sc_rt, gm):
+        game_result_array = np.array([])
+        for i in range(1000):
+            game_result = self.random_single_game(sc1, sc2, g1, g2, sc_rt, gm)
+            game_result_array = np.append(game_result_array, game_result)
+        return game_result_array.sum()/1000
+    
     def simulate_game(self):
         score_1 = self.df_org['player1Score'].values
+        score_2 = self.df_org['player2Score'].values
+        game_1  = self.df_org['player1Game'].values
+        game_2  = self.df_org['player2Game'].values
+        get_player = self.df_org['getPointPlayer'].values
+        get_player_01 = []
+        get_player_01 = [gp*0 if gp == 2 else gp for gp in get_player]
+        for i, (sc1, sc2, g1, g2) in enumerate(zip(score_1, score_2, game_1, game_2)):
+            if i >= self.calc_interval_point:
+                # score rate
+                sc_sum_1  = sum(get_player_01[i-self.calc_interval_point:i])
+                sc_sum_2  = self.calc_interval_point - sc_sum_1
+                sc_rate_1 = self.calc_score_rate(sc_sum_1, sc_sum_2)
+                # winning rate
+                win_rate_1 = self.random_roop(sc1, sc2, g1, g2, sc_rate_1, self.game_match_num)
+                win_rate_2 = 1 - win_rate_1
 
 if __name__ == "__main__":
 
@@ -53,6 +112,8 @@ if __name__ == "__main__":
     root.withdraw()
 
     sim.read_csv_data()
+
+    sim.simulate_game()
 
 
 
