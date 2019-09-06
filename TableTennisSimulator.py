@@ -59,18 +59,12 @@ class TableTennisSimulator:
         # count score and game
         for i in range(1000):
             random = np.random.rand()
-            score_1 += 1 if random > sc_rt else score_1
-            score_2 += 1 if random > sc_rt else score_2
-            if (score_1 + score_2) >= 20:
-                if abs(score_1 - score_2) == 2:
-                    game_1 += 1 if score_1 > score_2 else game_1
-                    game_2 += 1 if score_2 > score_1 else game_2
-                    score_1 = 0
-                    score_2 = 0
-            else:
-                if score_1 >= 11 or score_2 >= 11:
-                    game_1 += 1 if score_1 > score_2 else game_1
-                    game_2 += 1 if score_2 > score_1 else game_2
+            score_1 = score_1 + 1 if random < sc_rt else score_1
+            score_2 = score_2 + 1 if random > sc_rt else score_2
+            if score_1 >= 11 or score_2 >= 11:
+                if abs(score_1 - score_2) >= 2:
+                    game_1 = game_1 + 1 if score_1 > score_2 else game_1
+                    game_2 = game_2 + 1 if score_2 > score_1 else game_2
                     score_1 = 0
                     score_2 = 0
             if game_1 >= gm:
@@ -87,22 +81,41 @@ class TableTennisSimulator:
         return game_result_array.sum()/1000
     
     def simulate_game(self):
-        score_1 = self.df_org['player1Score'].values
-        score_2 = self.df_org['player2Score'].values
-        game_1  = self.df_org['player1Game'].values
-        game_2  = self.df_org['player2Game'].values
+        score_1    = self.df_org['player1Score'].values
+        score_2    = self.df_org['player2Score'].values
+        game_1     = self.df_org['player1Game'].values
+        game_2     = self.df_org['player2Game'].values
         get_player = self.df_org['getPointPlayer'].values
-        get_player_01 = []
-        get_player_01 = [gp*0 if gp == 2 else gp for gp in get_player]
+        self.get_player_01 = []
+        self.get_player_01 = [gp*0 if gp == 2 else gp for gp in get_player]
+        self.get_player_01_sim = []
         for i, (sc1, sc2, g1, g2) in enumerate(zip(score_1, score_2, game_1, game_2)):
             if i >= self.calc_interval_point:
                 # score rate
-                sc_sum_1  = sum(get_player_01[i-self.calc_interval_point:i])
+                sc_sum_1  = sum(self.get_player_01[i-self.calc_interval_point:i])
                 sc_sum_2  = self.calc_interval_point - sc_sum_1
                 sc_rate_1 = self.calc_score_rate(sc_sum_1, sc_sum_2)
-                # winning rate
-                win_rate_1 = self.random_roop(sc1, sc2, g1, g2, sc_rate_1, self.game_match_num)
-                win_rate_2 = 1 - win_rate_1
+            else:
+                sc_rate_1 = 0.5
+            # winning rate
+            win_rate_1 = self.random_roop(sc1, sc2, g1, g2, sc_rate_1, self.game_match_num)
+            win_rate_2 = 1 - win_rate_1
+            self.win_rate_1 = np.hstack((self.win_rate_1, [win_rate_1]))
+            self.win_rate_2 = np.hstack((self.win_rate_2, [win_rate_2]))
+            if win_rate_1 > win_rate_2:
+                self.get_player_01_sim.append(1)
+            else:
+                self.get_player_01_sim.append(0)
+        self.calculate_accuracy()
+    
+    def calculate_accuracy(self):
+        total_point = len(self.get_player_01)
+        same_point  = 0
+        self.accuracy = 0
+        for i, (real, sim) in enumerate(zip(self.get_player_01, self.get_player_01_sim)):
+            if real == sim:
+                same_point += 1
+        self.accuracy = int((same_point / total_point) * 100)
 
 if __name__ == "__main__":
 
