@@ -58,14 +58,13 @@ class EngineeringFeatureAsCsv:
     
     def convert_json_to_df(self, path):
         df_org = pd.read_json(path)
-        df_drop_memo  = df_org.drop('memo', axis=1)
-        df_drop_match = df_drop_memo.drop('matchName', axis=1)
-        self.df_data  = df_drop_match
+        df_drop = df_org.drop(['memo', 'matchName', 'player1', 'player2'], axis=1)
+        self.df_data  = df_drop
     
     def save_as_csv(self, path):
         data_name = (path.split('/')[-1]).split('.')[0]
         save_name = data_name + '.csv'
-        self.df_data.to_csv(save_name, index=False, encoding='shift-jis')
+        self.df_data.to_csv(save_name, index=False)
     
     def set_server_receiver(self, index):
         self.server_array[index]   = self.server_num
